@@ -12,6 +12,7 @@
       "url": "https://github.com/angular/material/blob/master/LICENSE"
     }
   ],
+  "main": "dist/angular-material.js",
   "repository": {
     "type": "git",
     "url": "git://github.com/angular/material.git"
