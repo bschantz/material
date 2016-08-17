@@ -49,7 +49,6 @@
     &:not([disabled]) {
       md-icon {
         color: '{{primary-color}}';
-        fill: '{{primary-color}}';
       }
     }
   }
@@ -107,7 +106,6 @@
     &:not([disabled]) {
       md-icon {
         color: '{{warn-color}}';
-        fill: '{{warn-color}}';
       }
     }
   }
@@ -133,7 +131,6 @@
     &:not([disabled]) {
       md-icon {
         color: '{{accent-color}}';
-        fill: '{{accent-color}}';
       }
     }
   }
