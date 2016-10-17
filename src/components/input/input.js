@@ -90,19 +90,21 @@ function mdInputContainerDirective($mdTheming, $parse) {
 
   return {
     restrict: 'E',
-    link: postLink,
+    compile: compile,
     controller: ContainerCtrl
   };
 
-  function postLink(scope, element) {
-    $mdTheming(element);
-
+  function compile(tElement) {
     // Check for both a left & right icon
-    var leftIcon = element[0].querySelector(LEFT_SELECTORS);
-    var rightIcon = element[0].querySelector(RIGHT_SELECTORS);
+    var leftIcon = tElement[0].querySelector(LEFT_SELECTORS);
+    var rightIcon = tElement[0].querySelector(RIGHT_SELECTORS);
 
-    if (leftIcon) { element.addClass('md-icon-left'); }
-    if (rightIcon) { element.addClass('md-icon-right'); }
+    if (leftIcon) { tElement.addClass('md-icon-left'); }
+    if (rightIcon) { tElement.addClass('md-icon-right'); }
+
+    return function postLink(scope, element) {
+      $mdTheming(element);
+    };
   }
 
   function ContainerCtrl($scope, $element, $attrs, $animate) {
@@ -529,7 +531,8 @@ function inputTextareaDirective($mdUtil, $window, $mdAria, $timeout, $mdGesture)
         var container = containerCtrl.element;
         var dragGestureHandler = $mdGesture.register(handle, 'drag', { horizontal: false });
 
-        element.after(handle);
+
+        element.wrap('<div class="md-resize-wrapper">').after(handle);
         handle.on('mousedown', onMouseDown);
 
         container
@@ -569,7 +572,8 @@ function inputTextareaDirective($mdUtil, $window, $mdAria, $timeout, $mdGesture)
 
         function onDrag(ev) {
           if (!isDragging) return;
-          element.css('height', startHeight + (ev.pointer.y - dragStart) - $mdUtil.scrollTop() + 'px');
+
+          element.css('height', (startHeight + ev.pointer.distanceY) + 'px');
         }
 
         function onDragEnd(ev) {
@@ -633,12 +637,6 @@ function mdMaxlengthDirective($animate, $mdUtil) {
       // over the maxlength still counts as invalid.
       attr.$set('ngTrim', 'false');
 
-      ngModelCtrl.$formatters.push(renderCharCount);
-      ngModelCtrl.$viewChangeListeners.push(renderCharCount);
-      element.on('input keydown keyup', function() {
-        renderCharCount(); //make sure it's called with no args
-      });
-
       scope.$watch(attr.mdMaxlength, function(value) {
         maxlength = value;
         if (angular.isNumber(value) && value > 0) {
@@ -655,6 +653,11 @@ function mdMaxlengthDirective($animate, $mdUtil) {
         if (!angular.isNumber(maxlength) || maxlength < 0) {
           return true;
         }
+
+        // We always update the char count, when the modelValue has changed.
+        // Using the $validators for triggering the update works very well.
+        renderCharCount();
+
         return ( modelValue || element.val() || viewValue || '' ).length <= maxlength;
       };
     });
@@ -928,7 +931,7 @@ function ngMessagesAnimation($$AnimateRunner, $animateCss, $mdUtil) {
         done();
       }
     }
-  }
+  };
 }
 
 function ngMessageAnimation($$AnimateRunner, $animateCss, $mdUtil) {
@@ -936,13 +939,17 @@ function ngMessageAnimation($$AnimateRunner, $animateCss, $mdUtil) {
 
   return {
     enter: function(element, done) {
-      return showMessage(element);
+      var animator = showMessage(element);
+
+      animator.start().done(done);
     },
 
     leave: function(element, done) {
-      return hideMessage(element);
+      var animator = hideMessage(element);
+
+      animator.start().done(done);
     }
-  }
+  };
 }
 
 function showInputMessages(element, done) {
@@ -998,10 +1005,9 @@ function showMessage(element) {
 function hideMessage(element) {
   var height = element[0].offsetHeight;
   var styles = window.getComputedStyle(element[0]);
-  //var styles = { opacity: element.css('opacity') };
 
   // If we are already hidden, just return an empty animation
-  if (styles.opacity == 0) {
+  if (parseInt(styles.opacity) === 0) {
     return $animateCss(element, {});
   }
 
