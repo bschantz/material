@@ -97,9 +97,9 @@
  * This offset is provided in the format of `x y` or `n` where `n` will be used
  * in both the `x` and `y` axis.
  *
- * For example, to move a menu by `2px` from the top, we can use:
+ * For example, to move a menu by `2px` down from the top, we can use:
  * <hljs lang="html">
- * <md-menu md-offset="2 0">
+ * <md-menu md-offset="0 2">
  *   <!-- menu-content -->
  * </md-menu>
  * </hljs>
@@ -152,7 +152,7 @@
  *
  * @param {string} md-position-mode The position mode in the form of
  *           `x`, `y`. Default value is `target`,`target`. Right now the `x` axis
- *           also suppports `target-right`.
+ *           also supports `target-right`.
  * @param {string} md-offset An offset to apply to the dropdown after positioning
  *           `x`, `y`. Default value is `0`,`0`.
  *
