@@ -544,6 +544,20 @@ describe('$mdPanel', function() {
       expect(PANEL_EL).not.toExist();
     });
 
+    it('should close when clickOutsideToClose set to true and ' +
+        'propagateContainerEvents is also set to true', function() {
+          var config = {
+            propagateContainerEvents: true,
+            clickOutsideToClose: true
+          };
+
+          openPanel(config);
+
+          clickPanelContainer(getElement('body'));
+
+          expect(PANEL_EL).not.toExist();
+        });
+
     it('should not close when escapeToClose set to false', function() {
       openPanel();
 
@@ -2350,6 +2364,39 @@ describe('$mdPanel', function() {
           });
       });
 
+      it('should keep the panel within the viewport on repeat openings',
+        function() {
+
+          config.position = mdPanelPosition
+            .relativeTo(myButton)
+            .addPanelPosition(xPosition.ALIGN_END, yPosition.ALIGN_TOPS);
+
+          var panelRef = $mdPanel.create(config);
+
+          myButton.css({
+            position: 'absolute',
+            left: '-100px',
+            margin: 0
+          });
+
+          panelRef.open();
+          flushPanel();
+
+          expect(panelRef.panelEl[0].offsetLeft).toBe(VIEWPORT_MARGIN);
+          expect(panelRef.panelEl[0]).toHaveClass(ADJUSTED_CLASS);
+
+          panelRef.close();
+          flushPanel();
+
+          panelRef.open();
+          flushPanel();
+
+          expect(panelRef.panelEl[0].offsetLeft).toBe(VIEWPORT_MARGIN);
+          expect(panelRef.panelEl[0]).toHaveClass(ADJUSTED_CLASS);
+
+          panelRef.destroy();
+        });
+
       describe('vertically', function() {
         it('above an element', function() {
           var position = mdPanelPosition
@@ -2710,6 +2757,20 @@ describe('$mdPanel', function() {
       expect(panelRef.panelContainer).toHaveClass(HIDDEN_CLASS);
     });
 
+    it('should match the backdrop animation duration with the panel', function() {
+      mdPanelAnimation.duration(500);
+
+      openPanel({
+        hasBackdrop: true,
+        animation: mdPanelAnimation
+      });
+
+      var backdropAnimation = panelRef._backdropRef.config.animation;
+
+      expect(backdropAnimation._openDuration).toBe(mdPanelAnimation._openDuration);
+      expect(backdropAnimation._closeDuration).toBe(mdPanelAnimation._closeDuration);
+    });
+
     describe('should determine openFrom when', function() {
       it('provided a selector', function() {
         var animation = mdPanelAnimation.openFrom('button');
@@ -2797,6 +2858,34 @@ describe('$mdPanel', function() {
 
         expect(animation._openDuration).toBeFalsy();
         expect(animation._closeDuration).toBeFalsy();
+      });
+    });
+
+    describe('updating the animation of a panel', function() {
+      it('should change the animation config of a panel', function() {
+        var newAnimation = $mdPanel.newPanelAnimation();
+
+        openPanel();
+
+        panelRef.updateAnimation(newAnimation);
+
+        expect(panelRef.config.animation).toBe(newAnimation);
+      });
+
+      it('should update the duration of the backdrop animation', function() {
+        var newAnimation = $mdPanel.newPanelAnimation().duration({
+          open: 1000,
+          close: 2000
+        });
+
+        openPanel({ hasBackdrop: true });
+
+        panelRef.updateAnimation(newAnimation);
+
+        var backdropAnimation = panelRef._backdropRef.config.animation;
+
+        expect(backdropAnimation._openDuration).toBe(newAnimation._openDuration);
+        expect(backdropAnimation._closeDuration).toBe(newAnimation._closeDuration);
       });
     });
   });
@@ -3094,12 +3183,22 @@ describe('$mdPanel', function() {
     attachedElements.push(element);
   }
 
-  function clickPanelContainer() {
+  /**
+   * Returns the angular element associated with a CSS selector or element.
+   * @param el {string|!angular.JQLite|!Element}
+   * @returns {!angular.JQLite}
+   */
+  function getElement(el) {
+    var queryResult = angular.isString(el) ? document.querySelector(el) : el;
+    return angular.element(queryResult);
+  }
+
+  function clickPanelContainer(container) {
     if (!panelRef) {
       return;
     }
 
-    var container = panelRef.panelContainer;
+    container = container || panelRef.panelContainer;
 
     container.triggerHandler({
       type: 'mousedown',
